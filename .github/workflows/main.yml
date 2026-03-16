@@ -1,0 +1,33 @@
+name: Update Seismogram
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # Τρέχει κάθε 10 λεπτά
+  workflow_dispatch: # Σου επιτρέπει να το τρέχεις και χειροκίνητα
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run seismograph script
+        run: python seismos.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add seismo_live.png
+          git commit -m "Update seismogram" || exit 0
+          git push
