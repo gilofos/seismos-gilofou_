@@ -2,8 +2,8 @@ name: Update Seismogram
 
 on:
   schedule:
-    - cron: '*/10 * * * *' # Τρέχει κάθε 10 λεπτά
-  workflow_dispatch: # Σου επιτρέπει να το τρέχεις και χειροκίνητα
+    - cron: '*/10 * * * *' # Τρέχει αυτόματα κάθε 10 λεπτά
+  workflow_dispatch: # Σου επιτρέπει να το ξεκινάς εσύ όποτε θες
 
 jobs:
   build:
@@ -19,15 +19,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install --no-cache-dir matplotlib obspy
 
       - name: Run seismograph script
         run: python seismos.py
 
       - name: Commit and push changes
         run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-          git add seismo_live.png
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
           git commit -m "Update seismogram" || exit 0
           git push
