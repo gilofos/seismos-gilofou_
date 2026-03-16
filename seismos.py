@@ -3,48 +3,32 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
-import time
+import os
 
-# Σύνδεση με το παγκόσμιο δίκτυο
-client = Client("EARTHSCOPE") 
+# Χρησιμοποιούμε έναν πιο γρήγορο σέρβερ (GFZ - Γερμανία)
+client = Client("GFZ") 
 
-print("Ο ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ ΞΕΚΙΝΗΣΕ (ΕΠΑΓΓΕΛΜΑΤΙΚΗ ΕΚΔΟΣΗ)...")
+try:
+    now = UTCDateTime.now()
+    # Παίρνουμε δεδομένα από σταθμό στην Ελλάδα (Athens - AT)
+    # Ζητάμε μόνο 5 λεπτά (300 δευτερόλεπτα) για να είναι γρήγορο
+    st = client.get_waveforms("GE", "SANT", "", "BHZ", now - 300, now)
+    
+    st.detrend('demean')
+    st.filter('bandpass', freqmin=0.5, freqmax=5.0)
+    
+    plt.figure(figsize=(10, 4))
+    times = st[0].times("utcdatetime")
+    # Μετατροπή σε ώρα Ελλάδος (+2 ώρες)
+    plt.plot([(t + 7200).datetime for t in times], st[0].data, color='red')
+    
+    plt.title(f"ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ - LIVE\n{(now + 7200).strftime('%d/%m/%Y %H:%M:%S')}")
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    # Αποθήκευση
+    plt.savefig('seismo_live.png')
+    print("Η εικόνα δημιουργήθηκε επιτυχώς!")
 
-while True:
-    try:
-        # Παίρνουμε την ώρα (UTC για το σύστημα, θα τη μετατρέψουμε στο γράφημα)
-        now = UTCDateTime.now()
-        
-        # Λήψη δεδομένων (Σταθμός ANTO - Άγκυρα, πολύ σταθερός για την περιοχή μας)
-        st = client.get_waveforms("IU", "ANTO", "00", "BHZ", now - 600, now)
-        
-        # --- ΕΠΕΞΕΡΓΑΣΙΑ ΣΗΜΑΤΟΣ ---
-        st.detrend('demean') # Φέρνει τη γραμμή στο ΜΗΔΕΝ (κεντράρισμα)
-        st.filter('bandpass', freqmin=0.5, freqmax=5.0) # Καθαρίζει τον θόρυβο
-        
-        # --- ΣΧΕΔΙΑΣΗ ---
-        plt.close('all')
-        fig, ax = plt.subplots(figsize=(12, 5))
-        
-        # Μετατροπή των δευτερολέπτων σε πραγματική ώρα Ελλάδος
-        # Προσθέτουμε 2 ώρες (ή 3 ανάλογα την εποχή) για ώρα Ελλάδος
-        times = st[0].times("utcdatetime") 
-        times_greek = [(t + 7200).datetime for t in times] # +2 ώρες
-        
-        ax.plot(times_greek, st[0].data, color='red', linewidth=1)
-        
-        ax.set_title(f"LIVE ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ\nΤελευταία ενημέρωση: {(now + 7200).strftime('%H:%M:%S')}", fontsize=14)
-        ax.set_ylabel("Ένταση (Counts)")
-        ax.set_xlabel("Ώρα Ελλάδος")
-        ax.grid(True, alpha=0.3)
-        
-        # Αποθήκευση
-        plt.savefig('seismo_live.png')
-        plt.close(fig)
-        
-        print(f"ΕΠΙΤΥΧΙΑ! Το γράφημα ενημερώθηκε στις: {(now + 7200).strftime('%H:%M:%S')}")
-        time.sleep(300) 
-        
-    except Exception as e:
-        print(f"Αναμονή... ({e})")
-        time.sleep(60)
+except Exception as e:
+    print(f"Σφάλμα: {e}")
