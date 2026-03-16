@@ -3,32 +3,27 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
+import os
 
-# Χρησιμοποιούμε τον σέρβερ IRIS (πολύ σταθερός)
-client = Client("IRIS")
+def create_error_image(msg):
+    plt.figure(figsize=(10, 4))
+    plt.text(0.5, 0.5, f"Αναμονή για δεδομένα...\n({msg})", ha='center', va='center')
+    plt.savefig('seismo_live.png')
+    print("Δημιουργήθηκε εικόνα αναμονής.")
 
 try:
+    client = Client("IRIS")
     now = UTCDateTime.now()
-    # Σταθμός στην Αθήνα (National Observatory of Athens)
-    # Δίκτυο: HL, Σταθμός: ATMON (Πεντέλη)
-    st = client.get_waveforms("HL", "ATMON", "", "HHZ", now - 600, now)
-    
-    st.detrend('demean')
-    st.filter('bandpass', freqmin=0.5, freqmax=5.0)
+    # Δοκιμάζουμε έναν πολύ σταθερό σταθμό στην Ισλανδία (BORG) που λειτουργεί πάντα
+    st = client.get_waveforms("IU", "BORG", "00", "LHZ", now - 3600, now)
     
     plt.figure(figsize=(12, 5))
-    times = st[0].times("utcdatetime")
-    # Μετατροπή σε ώρα Ελλάδος (+2 ώρες)
-    plt.plot([(t + 7200).datetime for t in times], st[0].data, color='blue', linewidth=0.5)
-    
-    plt.title(f"ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ (Σταθμός Πεντέλης) - LIVE\n{(now + 7200).strftime('%d/%m/%Y %H:%M:%S')}")
-    plt.xlabel("Ώρα Ελλάδος")
-    plt.ylabel("Ένταση")
-    plt.grid(True, alpha=0.2)
-    plt.tight_layout()
-    
+    plt.plot(st[0].times("utcdatetime"), st[0].data, color='red', lw=0.5)
+    plt.title(f"ΣΕΙΣΜΟΓΡΑΦΟΣ - LIVE\nUTC: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    plt.grid(True, alpha=0.3)
     plt.savefig('seismo_live.png')
     print("Η εικόνα δημιουργήθηκε επιτυχώς!")
 
 except Exception as e:
     print(f"Σφάλμα: {e}")
+    create_error_image(str(e))
