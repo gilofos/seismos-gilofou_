@@ -3,27 +3,48 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
-import os
+import sys
 
-def create_error_image(msg):
-    plt.figure(figsize=(10, 4))
-    plt.text(0.5, 0.5, f"Αναμονή για δεδομένα...\n({msg})", ha='center', va='center')
+def create_status_image(message):
+    """Φτιάχνει μια εικόνα με μήνυμα αν κάτι πάει στραβά"""
+    plt.figure(figsize=(12, 5))
+    plt.text(0.5, 0.5, message, ha='center', va='center', fontsize=12, color='red')
+    plt.title("ΣΕΙΣΜΟΓΡΑΦΟΣ - ΚΑΤΑΣΤΑΣΗ")
     plt.savefig('seismo_live.png')
-    print("Δημιουργήθηκε εικόνα αναμονής.")
+    plt.close()
 
 try:
+    # Σύνδεση με τον σέρβερ
     client = Client("IRIS")
     now = UTCDateTime.now()
-    # Δοκιμάζουμε έναν πολύ σταθερό σταθμό στην Ισλανδία (BORG) που λειτουργεί πάντα
-    st = client.get_waveforms("IU", "BORG", "00", "LHZ", now - 3600, now)
     
+    # Επιλογή σταθμού: HL (Δίκτυο), ASYG (Αθήνα), 00 (Location), BHZ (Κανάλι)
+    # Παίρνουμε τα δεδομένα της τελευταίας 1 ώρας
+    starttime = now - 3600
+    endtime = now
+
+    print(f"Λήψη δεδομένων για τον σταθμό ASYG ({now.strftime('%H:%M:%S')})...")
+    
+    st = client.get_waveforms("HL", "ASYG", "00", "BHZ", starttime, endtime)
+    
+    # Δημιουργία γραφήματος
     plt.figure(figsize=(12, 5))
-    plt.plot(st[0].times("utcdatetime"), st[0].data, color='red', lw=0.5)
-    plt.title(f"ΣΕΙΣΜΟΓΡΑΦΟΣ - LIVE\nUTC: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    plt.grid(True, alpha=0.3)
+    trace = st[0]
+    plt.plot(trace.times("utcdatetime"), trace.data, color='#0047AB', lw=0.7)
+    
+    # Ρυθμίσεις εμφάνισης
+    plt.title(f"ΣΕΙΣΜΟΓΡΑΦΟΣ ΑΘΗΝΑΣ (ASYG) - LIVE\nΕνημέρωση: {now.strftime('%d/%m/%Y %H:%M:%S')} UTC", fontsize=14)
+    plt.xlabel("Ώρα (UTC)", fontsize=10)
+    plt.ylabel("Ένταση (Counts)", fontsize=10)
+    plt.grid(True, linestyle=':', alpha=0.6)
+    
+    # Αποθήκευση
+    plt.tight_layout()
     plt.savefig('seismo_live.png')
-    print("Η εικόνα δημιουργήθηκε επιτυχώς!")
+    plt.close()
+    print("Η εικόνα ανανεώθηκε επιτυχώς!")
 
 except Exception as e:
-    print(f"Σφάλμα: {e}")
-    create_error_image(str(e))
+    error_msg = f"Πρόβλημα σύνδεσης ή έλλειψη δεδομένων:\n{str(e)}"
+    print(error_msg)
+    create_status_image(error_msg)
