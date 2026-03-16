@@ -1,32 +1,32 @@
 import matplotlib
-matplotlib.use('Agg') 
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
-import os
 
-# Χρησιμοποιούμε έναν πιο γρήγορο σέρβερ (GFZ - Γερμανία)
-client = Client("GFZ") 
+# Χρησιμοποιούμε τον σέρβερ IRIS (πολύ σταθερός)
+client = Client("IRIS")
 
 try:
     now = UTCDateTime.now()
-    # Παίρνουμε δεδομένα από σταθμό στην Ελλάδα (Athens - AT)
-    # Ζητάμε μόνο 5 λεπτά (300 δευτερόλεπτα) για να είναι γρήγορο
-    st = client.get_waveforms("GE", "SANT", "", "BHZ", now - 300, now)
+    # Σταθμός στην Αθήνα (National Observatory of Athens)
+    # Δίκτυο: HL, Σταθμός: ATMON (Πεντέλη)
+    st = client.get_waveforms("HL", "ATMON", "", "HHZ", now - 600, now)
     
     st.detrend('demean')
     st.filter('bandpass', freqmin=0.5, freqmax=5.0)
     
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(12, 5))
     times = st[0].times("utcdatetime")
     # Μετατροπή σε ώρα Ελλάδος (+2 ώρες)
-    plt.plot([(t + 7200).datetime for t in times], st[0].data, color='red')
+    plt.plot([(t + 7200).datetime for t in times], st[0].data, color='blue', linewidth=0.5)
     
-    plt.title(f"ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ - LIVE\n{(now + 7200).strftime('%d/%m/%Y %H:%M:%S')}")
-    plt.grid(True, alpha=0.3)
+    plt.title(f"ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ (Σταθμός Πεντέλης) - LIVE\n{(now + 7200).strftime('%d/%m/%Y %H:%M:%S')}")
+    plt.xlabel("Ώρα Ελλάδος")
+    plt.ylabel("Ένταση")
+    plt.grid(True, alpha=0.2)
     plt.tight_layout()
     
-    # Αποθήκευση
     plt.savefig('seismo_live.png')
     print("Η εικόνα δημιουργήθηκε επιτυχώς!")
 
