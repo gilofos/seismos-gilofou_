@@ -1,44 +1,37 @@
-import matplotlib
-matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
+import matplotlib
+matplotlib.use('Agg') # Για να τρέχει στο GitHub χωρίς οθόνη
 
-# Σύνδεση με το δίκτυο
-client = Client("EARTHSCOPE") 
-
-def run_seismo():
-    print("Ξεκινάω την ανανέωση...")
+def get_seismo():
+    client = Client("EARTHSCOPE")
     try:
-        # Παίρνουμε τα τελευταία 10 λεπτά (600 δευτερόλεπτα)
-        now = UTCDateTime.now() - 15
+        # Παίρνουμε τα τελευταία 10 λεπτά
+        now = UTCDateTime.now()
         st = client.get_waveforms("IU", "ANTO", "00", "BHZ", now - 600, now)
         
-        # --- ΕΠΕΞΕΡΓΑΣΙΑ ΓΙΑ ΤΑΧΥΤΗΤΑ ---
         st.detrend('demean')
         st.filter('bandpass', freqmin=0.5, freqmax=5.0)
-        st.decimate(5, strict_length=False) # Κάνει το γράφημα 5 φορές πιο γρήγορο!
         
-        # --- ΣΧΕΔΙΑΣΗ ---
-        plt.close('all')
-        fig, ax = plt.subplots(figsize=(12, 5), dpi=90)
+        fig, ax = plt.subplots(figsize=(12, 5))
+        times = st[0].times("utcdatetime")
+        # Μετατροπή σε ώρα Ελλάδος (+2 ώρες ή +3 ανάλογα την εποχή)
+        times_greek = [(t + 7200).datetime for t in times]
         
-        # Ώρα Ελλάδος (+2 ώρες)
-        times = st.times("utcdatetime") 
-        times_greek = [(t + 7200).datetime for t in times] 
+        ax.plot(times_greek, st[0].data, color='red', linewidth=1)
         
-        ax.plot(times_greek, st.data, color='#d62828', linewidth=0.8)
-        
-        update_time = (now + 7200).strftime('%H:%M:%S')
-        ax.set_title(f"LIVE ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ\nΤελευταία ενημέρωση: {update_time}", fontsize=14, fontweight='bold')
+        last_time = (now + 7200).strftime('%H:%M:%S')
+        ax.set_title(f"LIVE ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ\nΤελευταία ενημέρωση: {last_time}")
+        ax.set_ylabel("Ένταση (Counts)")
+        ax.set_xlabel("Ώρα Ελλάδος")
         ax.grid(True, alpha=0.3)
         
-        plt.tight_layout()
-        plt.savefig('seismo_live.png') # Η εικόνα που θα βλέπουμε
-        print(f"ΕΠΙΤΥΧΙΑ! Ενημερώθηκε στις {update_time}")
-
+        plt.savefig('seismo_live.png', dpi=100)
+        plt.close()
+        print(f"Η εικόνα δημιουργήθηκε στις {last_time}")
     except Exception as e:
         print(f"Σφάλμα: {e}")
 
 if __name__ == "__main__":
-    run_seismo()
+    get_seismo()
