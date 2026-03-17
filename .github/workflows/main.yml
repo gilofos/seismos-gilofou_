@@ -1,36 +1,35 @@
 name: Update Seismogram
+
 on:
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
-
-permissions:
-  contents: write
+  repository_dispatch:
+    types: [update_seismos]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          persist-credentials: true
+        uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: pubs/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install obspy matplotlib
+        run: |
+          pip install matplotlib requests
 
       - name: Run script
         run: python seismos.py
 
-      - name: Commit and Push
+      - name: Commit and push changes
         run: |
-          git config --global user.name "gilofos"
-          git config --global user.email "gilofos@users.noreply.github.com"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add seismo_live.png
-          git commit -m "Auto Update Seismo" || exit 0
+          git commit -m "Update seismogram" || exit 0
           git push
