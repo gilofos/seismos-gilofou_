@@ -38,9 +38,9 @@ def get_seismo():
     # Μορφοποίηση ώρας στον άξονα Χ
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     
-    # Ο ΕΠΑΓΓΕΛΜΑΤΙΚΟΣ ΤΙΤΛΟΣ
-    ax.set_title("ΣΤΑΘΜΟΣ ΠΑΡΑΚΟΛΟΥΘΗΣΗΣ: ΓΗΛΟΦΟΣ (Δίκτυο HL)\nΔεδομένα από σταθμό Ιωαννίνων", 
-                 fontsize=13, fontweight='bold', pad=15)
+    # Ο νέος τίτλος με τη λέξη ΣΕΙΣΜΟΓΡΑΦΟΣ
+    ax.set_title("ΣΕΙΣΜΟΓΡΑΦΟΣ: ΓΗΛΟΦΟΣ (Δίκτυο HL)\nΔεδομένα από σταθμό Ιωαννίνων", 
+             fontsize=13, fontweight='bold', pad=15)
     
     # Η ΕΠΕΞΗΓΗΣΗ ΓΙΑ ΤΗΝ ΕΔΑΦΙΑ ΚΙΝΗΣΗ
     current_update = (now_utc + 7200).strftime('%H:%M:%S')
