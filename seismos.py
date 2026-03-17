@@ -39,7 +39,7 @@ def get_seismo():
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     
     # Ο ΕΠΑΓΓΕΛΜΑΤΙΚΟΣ ΤΙΤΛΟΣ
-    ax.set_title("ΣΤΑΘΜΟΣ ΠΑΡΑΚΟΛΟΥΘΗΣΗΣ: ΓΗΛΟΦΟΣ (Δίκτυο HL)\nΑναμετάδοση από σταθμό Ιωαννίνων", 
+    ax.set_title("ΣΤΑΘΜΟΣ ΠΑΡΑΚΟΛΟΥΘΗΣΗΣ: ΓΗΛΟΦΟΣ (Δίκτυο HL)\nΔεδομένα από σταθμό Ιωαννίνων", 
                  fontsize=13, fontweight='bold', pad=15)
     
     # Η ΕΠΕΞΗΓΗΣΗ ΓΙΑ ΤΗΝ ΕΔΑΦΙΑ ΚΙΝΗΣΗ
