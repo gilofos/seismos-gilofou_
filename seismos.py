@@ -2,36 +2,47 @@ import matplotlib.pyplot as plt
 from obspy.clients.fdsn import Client
 from obspy import UTCDateTime
 import matplotlib
-matplotlib.use('Agg') # Για να τρέχει στο GitHub χωρίς οθόνη
+import datetime
+
+matplotlib.use('Agg') 
 
 def get_seismo():
     client = Client("EARTHSCOPE")
     try:
-        # Παίρνουμε τα τελευταία 10 λεπτά
-        now = UTCDateTime.now()
-        st = client.get_waveforms("IU", "ANTO", "00", "BHZ", now - 600, now)
+        # Παίρνουμε την τωρινή ώρα σε UTC
+        # Αφαιρούμε 30 δευτερόλεπτα για να είμαστε σίγουροι ότι ο σέρβερ έχει προλάβει να τα γράψει
+        now_utc = UTCDateTime.now() - 30 
+        
+        # Ζητάμε τα τελευταία 10 λεπτά (600 δευτερόλεπτα)
+        st = client.get_waveforms("IU", "ANTO", "00", "BHZ", now_utc - 600, now_utc)
         
         st.detrend('demean')
         st.filter('bandpass', freqmin=0.5, freqmax=5.0)
         
         fig, ax = plt.subplots(figsize=(12, 5))
+        
+        # Μετατροπή σε ώρα Ελλάδος (+2 ώρες τώρα τον Μάρτιο)
         times = st[0].times("utcdatetime")
-        # Μετατροπή σε ώρα Ελλάδος (+2 ώρες ή +3 ανάλογα την εποχή)
         times_greek = [(t + 7200).datetime for t in times]
         
         ax.plot(times_greek, st[0].data, color='red', linewidth=1)
         
-        last_time = (now + 7200).strftime('%H:%M:%S')
+        # Εμφάνιση της τελευταίας ώρας ενημέρωσης στο γράφημα
+        last_time = (now_utc + 7200).strftime('%H:%M:%S')
         ax.set_title(f"LIVE ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ\nΤελευταία ενημέρωση: {last_time}")
         ax.set_ylabel("Ένταση (Counts)")
         ax.set_xlabel("Ώρα Ελλάδος")
         ax.grid(True, alpha=0.3)
         
+        # ΣΗΜΑΝΤΙΚΟ: Αποθήκευση με dpi για καθαρότητα
+        plt.tight_layout()
         plt.savefig('seismo_live.png', dpi=100)
         plt.close()
-        print(f"Η εικόνα δημιουργήθηκε στις {last_time}")
+        
+        print(f"Η εικόνα δημιουργήθηκε επιτυχώς για την ώρα: {last_time}")
+        
     except Exception as e:
-        print(f"Σφάλμα: {e}")
+        print(f"Σφάλμα κατά τη λήψη δεδομένων: {e}")
 
 if __name__ == "__main__":
     get_seismo()
