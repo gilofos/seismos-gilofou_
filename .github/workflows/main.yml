@@ -1,38 +1,26 @@
 name: Update Seismogram
-
 on:
   schedule:
-    # Το 5 είναι το πιο γρήγορο που επιτρέπει επίσημα το GitHub
-    - cron: '*/5 * * * *'
-  workflow_dispatch: # Σου επιτρέπει να το πατάς και εσύ χειροκίνητα
-
-permissions:
-  contents: write
-
+    - cron: '*/5 * * * *'  # Τρέχει κάθε 5 λεπτά
+  workflow_dispatch:       # Για να το ξεκινάς κι εσύ με το χέρι
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v2
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-          cache: 'pip' # <--- ΑΥΤΟ ΤΟ ΚΑΝΕΙ ΓΡΗΓΟΡΟ
-
       - name: Install dependencies
-        run: |
-          pip install matplotlib obspy
-
-      - name: Run seismograph script
+        run: pip install obspy matplotlib
+      - name: Run script
         run: python seismos.py
-
-      - name: Commit and push changes
+      - name: Commit and Push
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "ghilofos"
+          git config --global user.email "action@github.com"
           git add seismo_live.png
-          git commit -m "Update seismogram" || exit 0
+          git commit -m "Auto Update Seismo" || exit 0
           git push
