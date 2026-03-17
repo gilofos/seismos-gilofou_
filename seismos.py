@@ -10,45 +10,41 @@ def get_seismo():
     client = Client("NOA")
     now_utc = UTCDateTime.now()
     
-    # 4 λεπτά καθυστέρηση για σίγουρη ροή
+    # Χρόνος με 4 λεπτά καθυστέρηση για σίγουρη ροή δεδομένων
     end_time = now_utc - 240
     start_time = end_time - 600
     
-    # Πρώτος σταθμός τα Ιωάννινα (JAN)
-    test_stations = [
-        {"id": "JAN", "loc": "ΙΩΑΝΝΙΝΑ"},
-        {"id": "THE", "loc": "ΘΕΣΣΑΛΟΝΙΚΗ"},
-        {"id": "LIT", "loc": "ΛΙΤΟΧΩΡΟ"}
-    ]
+    # Χρησιμοποιούμε τον σταθμό JAN (Ιωάννινα) για το σήμα
+    station_id = "JAN"
     
-    data = None
-    active_name = ""
-
-    for st_info in test_stations:
-        try:
-            st = client.get_waveforms("HL", st_info['id'], "", "HHZ", start_time, end_time)
-            st.detrend('demean')
-            st.filter('bandpass', freqmin=0.5, freqmax=10.0)
-            data = st[0].data
-            times = [(t + 7200).datetime for t in st[0].times("utcdatetime")]
-            active_name = st_info['loc']
-            break 
-        except:
-            continue
-
-    if data is None:
+    try:
+        st = client.get_waveforms("HL", station_id, "", "HHZ", start_time, end_time)
+        st.detrend('demean')
+        st.filter('bandpass', freqmin=0.5, freqmax=10.0)
+        data = st[0].data
+        times = [(t + 7200).datetime for t in st[0].times("utcdatetime")]
+        # Εδώ αλλάζουμε το όνομα που εμφανίζεται
+        location_label = "ΓΗΛΟΦΟΣ"
+    except:
         data = np.zeros(100)
         times = [(start_time + 7200 + i*6).datetime for i in range(100)]
-        active_name = "OFFLINE"
+        location_label = "ΓΗΛΟΦΟΣ (ΑΝΑΜΟΝΗ)"
 
     fig, ax = plt.subplots(figsize=(12, 5))
-    ax.plot(times, data, color='red', linewidth=0.7)
+    
+    # Σχεδίαση με λίγο πιο παχιά γραμμή (1.0 αντί για 0.7)
+    ax.plot(times, data, color='red', linewidth=1.0)
     
     current_update = (now_utc + 7200).strftime('%H:%M:%S')
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    ax.set_title(f"ΣΤΑΘΜΟΣ: {active_name} | ΕΝΗΜΕΡΩΣΗ: {current_update}")
+    
+    # Ο τίτλος που ζήτησες
+    ax.set_title(f"ΣΕΙΣΜΟΓΡΑΦΟΣ: {location_label} | ΕΝΗΜΕΡΩΣΗ: {current_update}", fontsize=14, fontweight='bold')
+    
+    ax.set_ylabel("Ένταση")
     ax.grid(True, alpha=0.3)
     
+    # Όρια κλίμακας για να φαίνεται ο παλμός
     limit = max(np.max(np.abs(data)) * 1.1, 300)
     ax.set_ylim([-limit, limit])
     ax.set_xlim([times[0], times[-1]])
