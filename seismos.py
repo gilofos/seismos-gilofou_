@@ -28,21 +28,35 @@ def get_seismo():
 
     fig, ax = plt.subplots(figsize=(12, 5))
     
-    # Σχεδίαση της γραμμής (Κόκκινη, παχιά για να φαίνεται καλά)
+    # Σχεδίαση της γραμμής
     ax.plot(times, data, color='red', linewidth=1.1)
     
-    # Αφαιρούμε τα νούμερα (Counts) για να μην μπερδεύονται με Ρίχτερ
-    ax.set_yticklabels([]) 
-    ax.set_yticks([]) 
+    # --- ΕΔΩ ΕΙΝΑΙ ΟΙ ΑΛΛΑΓΕΣ ΓΙΑ ΤΟΥΣ ΑΡΙΘΜΟΥΣ ---
+    # Εμφανίζουμε τους αριθμούς αριστερά (Counts)
+    ax.tick_params(axis='y', labelleft=True, left=True, labelsize=9)
+    ax.set_ylabel("ΠΛΑΤΟΣ (COUNTS)", fontsize=10, fontweight='bold')
     
+    # --- ΠΡΟΣΘΗΚΗ P, S, L (Δείγματα) ---
+    # Τα τοποθετούμε στο 20%, 50% και 80% του γραφήματος για να τα βλέπεις
+    mid_idx_p = int(len(times) * 0.2)
+    mid_idx_s = int(len(times) * 0.5)
+    mid_idx_l = int(len(times) * 0.8)
+    
+    # Το limit βοηθάει να τα βάλουμε λίγο πιο πάνω από τη γραμμή
+    limit = max(np.max(np.abs(data)) * 1.1, 400)
+    
+    ax.text(times[mid_idx_p], limit*0.7, 'P', color='black', fontsize=12, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+    ax.text(times[mid_idx_s], limit*0.7, 'S', color='black', fontsize=12, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+    ax.text(times[mid_idx_l], limit*0.7, 'L', color='black', fontsize=12, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+
     # Μορφοποίηση ώρας στον άξονα Χ
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     
-    # Ο νέος τίτλος με τη λέξη ΣΕΙΣΜΟΓΡΑΦΟΣ
+    # Τίτλος
     ax.set_title("Ο ΣΕΙΣΜΟΓΡΑΦΟΣ ΤΟΥ ΓΗΛΟΦΟΥ (Δίκτυο HL)\nΔεδομένα από σταθμό Ιωαννίνων", 
-             fontsize=13, fontweight='bold', pad=15)
+              fontsize=13, fontweight='bold', pad=15)
     
-    # Η ΕΠΕΞΗΓΗΣΗ ΓΙΑ ΤΗΝ ΕΔΑΦΙΑ ΚΙΝΗΣΗ
+    # Επεξήγηση κάτω
     current_update = (now_utc + 7200).strftime('%H:%M:%S')
     plt.figtext(0.5, 0.02, 
                 f"ΚΑΤΑΓΡΑΦΗ ΕΔΑΦΙΚΗΣ ΚΙΝΗΣΗΣ (ΣΕ ΠΡΑΓΜΑΤΙΚΟ ΧΡΟΝΟ)\nΕνημέρωση: {current_update} | Τα δεδομένα αφορούν την τοπική δόνηση του εδάφους.", 
@@ -52,7 +66,6 @@ def get_seismo():
     ax.grid(True, alpha=0.2, linestyle='--')
     
     # Σταθεροποίηση κλίμακας
-    limit = max(np.max(np.abs(data)) * 1.1, 400)
     ax.set_ylim([-limit, limit])
     ax.set_xlim([times[0], times[-1]])
     
