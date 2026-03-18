@@ -39,7 +39,7 @@ def get_seismo():
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     
     # Ο νέος τίτλος με τη λέξη ΣΕΙΣΜΟΓΡΑΦΟΣ
-    ax.set_title("ΣΕΙΣΜΟΓΡΑΦΟΣ: ΓΗΛΟΦΟΣ (Δίκτυο HL)\nΔεδομένα από σταθμό Ιωαννίνων", 
+    ax.set_title("Ο ΣΕΙΣΜΟΓΡΑΦΟΣ ΤΟΥ ΓΗΛΟΦΟΥ (Δίκτυο HL)\nΔεδομένα από σταθμό Ιωαννίνων", 
              fontsize=13, fontweight='bold', pad=15)
     
     # Η ΕΠΕΞΗΓΗΣΗ ΓΙΑ ΤΗΝ ΕΔΑΦΙΑ ΚΙΝΗΣΗ
