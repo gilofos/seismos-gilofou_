@@ -25,7 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install matplotlib requests obspy
+          pip install matplotlib requests obspy numpy
 
       - name: Git Pull (Before script)
         run: |
