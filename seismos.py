@@ -64,7 +64,7 @@ def get_seismo():
     
     # Εμφάνιση Ρίχτερ σε πλαίσιο
     color_box = 'red' if richter_val > 3.0 else '#333333'
-    plt.figtext(0.5, 0.88, richter_text, ha="center", fontsize=16, 
+    plt.figtext(0.5, 0.80, richter_text, ha="center", fontsize=16, 
                 color="white", fontweight='bold', 
                 bbox=dict(facecolor=color_box, alpha=0.8, edgecolor='none', pad=8))
 
