@@ -32,7 +32,7 @@ def get_seismo():
         st.remove_response(inventory=inv, output="DISP")
         st.filter('bandpass', freqmin=0.5, freqmax=10.0)
         
-        tr = st[0]
+        tr = st
         data = tr.data
         times = [(t + 7200).datetime for t in tr.times("utcdatetime")]
 
@@ -54,30 +54,40 @@ def get_seismo():
     # --- ΣΧΕΔΙΑΣΗ ΓΡΑΦΗΜΑΤΟΣ ---
     fig, ax = plt.subplots(figsize=(12, 6))
     
-    # Η κόκκινη γραμμή
-    ax.plot(times, data, color='red', linewidth=1.1)
+    # Η κόκκινη γραμμή (ελαφρώς πιο παχιά για ευκρίνεια στο site)
+    ax.plot(times, data, color='red', linewidth=1.3)
     
+    # Σταθεροποίηση ορίων (limit)
+    limit = max(np.max(np.abs(data)) * 1.5, 1e-6)
+    ax.set_ylim([-limit, limit])
+    ax.set_xlim([times[0], times[-1]])
+
     # --- ΤΟΠΟΘΕΤΗΣΗ P, S, L ---
-    # Τα βάζουμε στο 70% του μέγιστου ύψους της γραμμής για να μην "πετάνε"
-    y_text_pos = np.max(np.abs(data)) * 0.7
-    if y_text_pos == 0: y_text_pos = 0.5e-6 # Default αν έχει μηδενικά δεδομένα
+    # Τα βάζουμε στο 65% του ορίου Υ για να είναι ΠΑΝΤΑ πάνω από τη γραμμή
+    y_fixed_pos = limit * 0.65
     
-    ax.text(times[int(len(times)*0.2)], y_text_pos, 'P', color='black', fontsize=11, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-    ax.text(times[int(len(times)*0.5)], y_text_pos, 'S', color='black', fontsize=11, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-    ax.text(times[int(len(times)*0.8)], y_text_pos, 'L', color='black', fontsize=11, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+    ax.text(times[int(len(times)*0.2)], y_fixed_pos, 'P', color='black', fontsize=11, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
+    ax.text(times[int(len(times)*0.5)], y_fixed_pos, 'S', color='black', fontsize=11, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
+    ax.text(times[int(len(times)*0.8)], y_fixed_pos, 'L', color='black', fontsize=11, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
 
     # --- ΠΛΑΙΣΙΟ ΡΙΧΤΕΡ ---
-    # Το 0.82 το φέρνει ακριβώς κάτω από τον τίτλο
-    color_box = 'red' if richter_val > 3.0 else '#555555'
-    plt.figtext(0.5, 0.82, richter_text, ha="center", fontsize=15, 
+    # Το 0.80 το φέρνει ακριβώς κάτω από τον τίτλο χωρίς να τον κρύβει
+    if richter_val < 2.5:
+        color_box = '#555555' # Γκρι για ησυχία
+    elif richter_val < 4.0:
+        color_box = '#FF8C00' # Πορτοκαλί για αισθητό σεισμό
+    else:
+        color_box = '#FF0000' # Κόκκινο για μεγάλο σεισμό
+
+    plt.figtext(0.5, 0.80, richter_text, ha="center", fontsize=15, 
                 color="white", fontweight='bold', 
-                bbox=dict(facecolor=color_box, alpha=0.9, edgecolor='none', pad=6))
+                bbox=dict(facecolor=color_box, alpha=0.9, edgecolor='none', pad=7))
 
     # Άξονες και Τίτλος
     ax.set_ylabel("ΜΕΤΑΤΟΠΙΣΗ ΕΔΑΦΟΥΣ (m)", fontsize=10, fontweight='bold')
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     ax.set_title("ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ\n(Βασισμένος σε δεδομένα του σταθμού Ιωαννίνων)", 
-              fontsize=14, fontweight='bold', pad=45)
+              fontsize=14, fontweight='bold', pad=50)
     
     # Επεξήγηση κάτω
     current_update = (now_utc + 7200).strftime('%H:%M:%S')
@@ -85,11 +95,6 @@ def get_seismo():
                 ha="center", fontsize=9, style='italic', bbox=dict(facecolor='#fefefe', alpha=0.9, edgecolor='#cccccc'))
 
     ax.grid(True, alpha=0.2, linestyle='--')
-    
-    # Σταθεροποίηση ορίων
-    limit = max(np.max(np.abs(data)) * 1.3, 1e-6)
-    ax.set_ylim([-limit, limit])
-    ax.set_xlim([times[0], times[-1]])
     
     plt.tight_layout(rect=[0, 0.05, 1, 0.95])
     plt.savefig('seismo_live.png', dpi=100)
