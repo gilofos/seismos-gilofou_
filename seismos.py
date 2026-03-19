@@ -4,6 +4,9 @@ from obspy import UTCDateTime
 import matplotlib.dates as mdates
 import numpy as np
 import matplotlib
+import math
+
+# Χρήση Agg για να τρέχει στο GitHub Actions χωρίς γραφικό περιβάλλον
 matplotlib.use('Agg')
 
 def get_seismo():
@@ -14,58 +17,76 @@ def get_seismo():
     end_time = now_utc - 240
     start_time = end_time - 600
     
+    richter_text = "Ησυχία"
+    richter_val = 0.0
+
     try:
-        # Λήψη δεδομένων από τον σταθμό JAN (Ιωάννινα)
+        # 1. Λήψη δεδομένων ΚΑΙ της απόκρισης του σταθμού (Inventory)
         st = client.get_waveforms("HL", "JAN", "", "HHZ", start_time, end_time)
+        inv = client.get_stations(network="HL", station="JAN", level="response", 
+                                 starttime=start_time, endtime=end_time)
+        
         st.detrend('demean')
+        
+        # 2. ΜΕΤΑΤΡΟΠΗ ΣΕ ΜΕΤΡΑ (Απαραίτητο για τον υπολογισμό Ρίχτερ)
+        # Μετατρέπει τα "counts" σε πραγματική μετατόπιση εδάφους (DISP)
+        st.remove_response(inventory=inv, output="DISP")
         st.filter('bandpass', freqmin=0.5, freqmax=10.0)
-        data = st[0].data
-        times = [(t + 7200).datetime for t in st[0].times("utcdatetime")]
-    except:
-        # Αν αποτύχει η σύνδεση
+        
+        tr = st[0]
+        data = tr.data
+        times = [(t + 7200).datetime for t in tr.times("utcdatetime")]
+
+        # 3. ΑΛΓΟΡΙΘΜΟΣ ΥΠΟΛΟΓΙΣΜΟΥ ΡΙΧΤΕΡ (ML)
+        # Βρίσκουμε το μέγιστο πλάτος (A) σε μέτρα
+        max_amp_m = np.max(np.abs(data))
+        
+        if max_amp_m > 1e-9: # Αν υπάρχει κίνηση πάνω από το θόρυβο
+            amp_mm = max_amp_m * 1000 # Μετατροπή σε χιλιοστά (mm)
+            # Λογαριθμικός τύπος Richter: log10(πλάτος) + διόρθωση απόστασης
+            # Χρησιμοποιούμε μια μέση διόρθωση (+1.2) για τοπική δραστηριότητα
+            richter_val = math.log10(amp_mm * 1000) + 1.2
+            richter_text = f"ΕΚΤΙΜΗΣΗ: {max(0, round(richter_val, 1))} Richter"
+        else:
+            richter_text = "Φυσιολογική Δραστηριότητα"
+
+    except Exception as e:
+        print(f"Σφάλμα λήψης: {e}")
         data = np.zeros(100)
         times = [(start_time + 7200 + i*6).datetime for i in range(100)]
+        richter_text = "Σφάλμα Σύνδεσης"
 
-    fig, ax = plt.subplots(figsize=(12, 5))
+    # ΣΧΕΔΙΑΣΗ ΓΡΑΦΗΜΑΤΟΣ
+    fig, ax = plt.subplots(figsize=(12, 6))
     
-    # Σχεδίαση της γραμμής
+    # Σχεδίαση της γραμμής (σε μέτρα πλέον)
     ax.plot(times, data, color='red', linewidth=1.1)
     
-    # --- ΕΔΩ ΕΙΝΑΙ ΟΙ ΑΛΛΑΓΕΣ ΓΙΑ ΤΟΥΣ ΑΡΙΘΜΟΥΣ ---
-    # Εμφανίζουμε τους αριθμούς αριστερά (Counts)
-    ax.tick_params(axis='y', labelleft=True, left=True, labelsize=9)
-    ax.set_ylabel("ΠΛΑΤΟΣ (COUNTS)", fontsize=10, fontweight='bold')
-    
-    # --- ΠΡΟΣΘΗΚΗ P, S, L (Δείγματα) ---
-    # Τα τοποθετούμε στο 20%, 50% και 80% του γραφήματος για να τα βλέπεις
-    mid_idx_p = int(len(times) * 0.2)
-    mid_idx_s = int(len(times) * 0.5)
-    mid_idx_l = int(len(times) * 0.8)
-    
-    # Το limit βοηθάει να τα βάλουμε λίγο πιο πάνω από τη γραμμή
-    limit = max(np.max(np.abs(data)) * 1.1, 400)
-    
-    ax.text(times[mid_idx_p], limit*0.7, 'P', color='black', fontsize=12, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-    ax.text(times[mid_idx_s], limit*0.7, 'S', color='black', fontsize=12, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-    ax.text(times[mid_idx_l], limit*0.7, 'L', color='black', fontsize=12, fontweight='bold', ha='center', bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+    # Εμφάνιση Ρίχτερ σε πλαίσιο
+    color_box = 'red' if richter_val > 3.0 else '#333333'
+    plt.figtext(0.5, 0.88, richter_text, ha="center", fontsize=16, 
+                color="white", fontweight='bold', 
+                bbox=dict(facecolor=color_box, alpha=0.8, edgecolor='none', pad=8))
 
-    # Μορφοποίηση ώρας στον άξονα Χ
+    # Ρυθμίσεις αξόνων
+    ax.set_ylabel("ΜΕΤΑΤΟΠΙΣΗ ΕΔΑΦΟΥΣ (m)", fontsize=10, fontweight='bold')
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     
     # Τίτλος
-    ax.set_title("Ο ΣΕΙΣΜΟΓΡΑΦΟΣ ΤΟΥ ΓΗΛΟΦΟΥ (Δίκτυο HL)\nΔεδομένα από σταθμό Ιωαννίνων", 
-              fontsize=13, fontweight='bold', pad=15)
+    ax.set_title("LIVE ΣΕΙΣΜΟΓΡΑΦΟΣ ΙΩΑΝΝΙΝΩΝ (JAN)\nΔίκτυο HL - Εθνικό Αστεροσκοπείο", 
+              fontsize=13, fontweight='bold', pad=35)
     
     # Επεξήγηση κάτω
     current_update = (now_utc + 7200).strftime('%H:%M:%S')
     plt.figtext(0.5, 0.02, 
-                f"ΚΑΤΑΓΡΑΦΗ ΕΔΑΦΙΚΗΣ ΚΙΝΗΣΗΣ (ΣΕ ΠΡΑΓΜΑΤΙΚΟ ΧΡΟΝΟ)\nΕνημέρωση: {current_update} | Τα δεδομένα αφορούν την τοπική δόνηση του εδάφους.", 
+                f"Ενημέρωση: {current_update} | Τα Richter υπολογίζονται αυτόματα βάσει του πλάτους ταλάντωσης.", 
                 ha="center", fontsize=9, color="#333333", style='italic', 
                 bbox=dict(facecolor='#fefefe', alpha=0.9, edgecolor='#cccccc', boxstyle='round,pad=0.5'))
 
     ax.grid(True, alpha=0.2, linestyle='--')
     
-    # Σταθεροποίηση κλίμακας
+    # Αυτόματη προσαρμογή ορίων Υ για να φαίνεται καλά η γραμμή
+    limit = max(np.max(np.abs(data)) * 1.2, 1e-6)
     ax.set_ylim([-limit, limit])
     ax.set_xlim([times[0], times[-1]])
     
