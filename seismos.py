@@ -73,8 +73,10 @@ def get_seismo():
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     
     # Τίτλος
-    ax.set_title("LIVE ΣΕΙΣΜΟΓΡΑΦΟΣ ΙΩΑΝΝΙΝΩΝ (JAN)\nΔίκτυο HL - Εθνικό Αστεροσκοπείο", 
-              fontsize=13, fontweight='bold', pad=35)
+       # Τίτλος
+    ax.set_title("ΣΕΙΣΜΟΓΡΑΦΟΣ ΓΗΛΟΦΟΥ\n(Βασισμένος σε δεδομένα του σταθμού Ιωαννίνων)", 
+              fontsize=13, fontweight='bold', pad=40)
+
     
     # Επεξήγηση κάτω
     current_update = (now_utc + 7200).strftime('%H:%M:%S')
