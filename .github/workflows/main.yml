@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Παίρνει όλο το ιστορικό για να μην κολλάει το pull
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -25,19 +25,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install matplotlib requests obspy numpy
+          pip install matplotlib requests obspy numpy pandas
 
       - name: Git Pull (Before script)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git pull origin main --rebase # Συγχρονίζει ΠΡΙΝ φτιάξει την εικόνα
+          git pull origin main --rebase
 
       - name: Run script
         run: python seismos.py
 
       - name: Commit and push changes
         run: |
-          git add seismo_live.png
-          git commit -m "Update seismogram $(date)" || echo "No changes to commit"
+          git add seismo_live.png seismos_history.txt
+          git commit -m "Update seismogram and history $(date)" || echo "No changes to commit"
           git push origin main
