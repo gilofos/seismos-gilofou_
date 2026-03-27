@@ -106,7 +106,7 @@ def get_seismo():
     if len(times) > 0: ax.set_xlim([times[0], times[-1]])
 
     header_msg = f"{richter_text} | Σταθμός: {active_station}"
-    plt.figtext(0.5, 0.84, header_msg, ha="center", fontsize=14, color="white", fontweight='bold', 
+    plt.figtext(0.5, 0.86, header_msg, ha="center", fontsize=14, color="white", fontweight='bold', 
                 bbox=dict(facecolor=color_box, alpha=0.9, edgecolor='none', pad=10))
 
     recent_events = []
